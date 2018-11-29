@@ -1,2 +1,6 @@
 # compiled python files
-.pyc
+*.pyc
+
+# Eclipse project files
+.project
+.pydevproject
