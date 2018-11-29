@@ -1,0 +1,7 @@
+FPLGUI  Copyright (C) 2017-2018  Oliver Clemens
+
+GNU GENERAL PUBLIC LICENSE, Version 3
+
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions.
