@@ -1,6 +1,11 @@
+# database folder
+/database/
+!/database/README.txt
+
 # compiled python files
 *.pyc
 
 # Eclipse project files
 .project
 .pydevproject
+
