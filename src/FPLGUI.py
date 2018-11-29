@@ -51,7 +51,7 @@ roadmap
 """
 
 ## import
-# import time
+import time
 import os
 import re
 from math import radians, copysign
@@ -89,21 +89,6 @@ class FPLGUI:
         else:
             ask4dir = True
         
-        # let user select X-Plane dir and write options
-        if ask4dir:
-            self.xPlaneDir = askdirectory(mustexist=True,initialdir='C:\\',title='Select X Plane directory',parent=self.master).replace('/','\\')
-            self.config = ConfigParser.RawConfigParser()
-            self.config.add_section('FPLGUI')
-            self.config.set('FPLGUI', 'XPLANEDIR', self.xPlaneDir)
-            
-            with open(os.path.join(self.databaseDir,'FPLGUI.cfg'),'w') as configFile:
-                self.config.write(configFile)
-        
-        self.fplPath = os.path.join(self.xPlaneDir,'Resources\\plugins\\X-IvAp Resources\\Flightplans')
-        
-        #inititalize Fpl-object
-        self.fpl = Fpl(self.fplPath)
-        
         # Show splash
         SPLASH_WIDTH = 350
         SPLASH_HEIGHT = 250
@@ -120,6 +105,21 @@ class FPLGUI:
         with open(os.path.join(self.supportFilesDir,'startupMessage.txt')) as startupFile:
             Label(splashWindow, text=startupFile.read(),justify='left',font=("Helvetica", 8)).place(relx=0.1, rely=0.4, anchor='nw')
         splashWindow.update()
+        
+        # let user select X-Plane dir and write options
+        if ask4dir:
+            time.sleep(3)
+            self.xPlaneDir = askdirectory(mustexist=True,initialdir='C:\\',title='Select X Plane directory',parent=splashWindow).replace('/','\\')
+            self.config = ConfigParser.RawConfigParser()
+            self.config.add_section('FPLGUI')
+            self.config.set('FPLGUI', 'XPLANEDIR', self.xPlaneDir)
+            
+            with open(os.path.join(self.databaseDir,'FPLGUI.cfg'),'w') as configFile:
+                self.config.write(configFile)
+        
+        #inititalize Fpl-object
+        self.fplPath = os.path.join(self.xPlaneDir,'Resources\\plugins\\X-IvAp Resources\\Flightplans')
+        self.fpl = Fpl(self.fplPath)
         
         # Load Fixes
         self.fpl.getFixes(os.path.join(self.navdataDir,'earth_fix.dat'))
