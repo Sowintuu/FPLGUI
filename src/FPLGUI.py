@@ -27,6 +27,11 @@ note         : l_ = label
                b_ = button
 
 =========================================================================
+version 0.3.1 - 30.11.2018
+- Added saveTemplate method.
+- Removed window for acTemplate. Now uses the actype field.
+- Replaced self-built dialogs by built-in dialogs
+
 version 0.3 - 28.11.2018
 - Added route export to XP
 - Added input filter for all fields
@@ -59,7 +64,7 @@ from warnings import warn
 from urllib.request import urlopen
 import webbrowser
 import configparser as ConfigParser
-from tkinter import Tk, Menu, Label, Entry, StringVar, OptionMenu, W, END, Toplevel, Button, Listbox
+from tkinter import Tk, Menu, Label, Entry, StringVar, OptionMenu, W, END, Toplevel, Button, Listbox, messagebox
 from tkinter.filedialog import askdirectory, askopenfilename, asksaveasfilename
 # from tkinter.simpledialog import askstring
 from tkinter.messagebox import showwarning
@@ -165,7 +170,6 @@ class FPLGUI:
         
         self.master.config(menu=menubar)
         
-        #TODO: Get only uppercase entries (https://stackoverflow.com/questions/44105484/)
         ## row 0-1 ##
         ## send button
         self.b_send = Button(self.master, text = "Send", command=self.send)
@@ -903,48 +907,79 @@ class FPLGUI:
         print('Exported to XP!')
         
     def acLoad(self):
-        WINDOW_WIDTH = 100
         
         self.updateFpl()
         
+        self.getAcTemplates()
+        
+        # get the right template.
+        if self.fpl.actype in self.acTemplates:
+            template = self.acTemplates[self.fpl.actype]
+            
+            # Assign values to FPL.
+            self.fpl.equipment = template[0]
+            self.fpl.transponder = template[1]
+            
+            matchObj = re.search(r'PBN/\w+', self.fpl.other,flags=re.A)  # @UndefinedVariable
+            if matchObj is not None:
+                self.fpl.other = self.fpl.other.replace(self.fpl.other[matchObj.start():matchObj.end()], '')
+            self.fpl.other = re.sub('  +',' ',self.fpl.other)
+            self.fpl.other = self.fpl.other.strip()
+            self.fpl.other = 'PBN/{} {}'.format(template[2],self.fpl.other)
+            self.fpl.other = self.fpl.other.strip()
+            
+            self.fpl.wakecat = template[3]
+            self.fpl.speed = template[4]
+            self.fpl.pob = template[5]
+            
+            # Update Fields.
+            self.updateContent()
+            
+        else:
+            messagebox.showinfo("FPL", "No templates found for\naircraft {}!".format(self.fpl.actype))
+                
+    def acSave(self):
+        # Preparations.
+        self.updateFpl()
+        self.getAcTemplates()
+        
+        # Check if template already exists and ask what to do.
+        if self.fpl.actype in self.acTemplates:
+            if messagebox.askyesno("Overwrite?","A template for the aircraft {} already exists.\nOverwrite?".format(self.fpl.actype)):
+                self.acTemplates.pop(self.fpl.actype)
+            else:
+                return
+        
+        # Update Aircraft templates.
+        self.acTemplates[self.fpl.actype] = [] 
+        self.acTemplates[self.fpl.actype].append(self.fpl.equipment)
+        self.acTemplates[self.fpl.actype].append(self.fpl.transponder)
+        
+        matchObj = re.search(r'PBN/\w+', self.fpl.other,flags=re.A)  # @UndefinedVariable
+        if matchObj is not None:
+            self.acTemplates[self.fpl.actype].append(self.fpl.other[matchObj.start():matchObj.end()].replace('PBN/',''))
+        else:
+            self.acTemplates[self.fpl.actype].append('')
+        
+        self.acTemplates[self.fpl.actype].append(self.fpl.wakecat)
+        self.acTemplates[self.fpl.actype].append(self.fpl.speed)
+        self.acTemplates[self.fpl.actype].append(self.fpl.pob)
+        
+        # Write the new list
+        with open(os.path.join(self.databaseDir,'aircraft.csv'),'w') as acFile:
+            acFile.write('ac;equip;transponder;PBN;wakeCat;speed;x;POB\n')
+            for te in self.acTemplates:
+                curTemplate = self.acTemplates[te]
+                acFile.write('{};{};{};{};{};{};{}\n'.format(te,curTemplate[0],curTemplate[1],curTemplate[2],curTemplate[3],curTemplate[4],curTemplate[5]))
+    
+    def getAcTemplates(self):
         self.acTemplates = {}
         with open(os.path.join(self.databaseDir,'aircraft.csv')) as acFile:
             for lineNr,line in enumerate(acFile):
                 if lineNr:
-                    lineSplit = line.split(';')
-                    self.acTemplates[lineSplit[0]] = [lineSplit[1],lineSplit[2],lineSplit[3],lineSplit[4],lineSplit[5],lineSplit[6],lineSplit[7]]
-                
-        # Create Top Level window
-        self.acLoadTop = Toplevel(self.master)
-        
-        if len(self.acTemplates) > 0:
-            Label(self.acLoadTop, text="Choose a template").pack()
-            
-            self.acLoadListboxTl = Listbox(self.acLoadTop,width=WINDOW_WIDTH)
-            self.acLoadListboxTl.pack()
-            for ac in self.acTemplates:
-                self.acLoadListboxTl.insert(END, "{}".format(ac))
-            self.acLoadListboxTl.selection_set(0)
-            
-            self.acLoadOkButtonTL = Button(self.acLoadTop,text="OK",command=self.acLoadCB,width=WINDOW_WIDTH)
-            self.acLoadOkButtonTL.pack()
-            
-        else:
-            Label(self.acLoadTop, text="No templates found!").pack()
-            self.acLoadOkButtonTL = Button(self.acLoadTop,text="OK",command=self.acLoadTop.destroy,width=10)
-            self.acLoadOkButtonTL.pack()
-        
-        self.acLoadTop.update()
-#         acLoadWidth = self.master.winfo_width()
-        acLoadHeight = self.master.winfo_height()
-        x = round((self.screenWidth/2) - (WINDOW_WIDTH/2))
-        y = round((self.screenHeight/2) - (acLoadHeight/2))
-        self.acLoadTop.geometry('{}x{}+{}+{}'.format(WINDOW_WIDTH,acLoadHeight,x,y))
-        
-        self.master.wait_window(self.acLoadTop)
-                
-    def acSave(self):
-        pass
+                    lineSplit = line.rstrip('\n').split(';')
+                    self.acTemplates[lineSplit[0]] = [lineSplit[1],lineSplit[2],lineSplit[3],lineSplit[4],lineSplit[5],lineSplit[6]]
+    
     
     def routeListCB(self):
         selectedRoute = self.importRouteListboxTl.curselection()
@@ -952,33 +987,6 @@ class FPLGUI:
         self.fpl.route = self.routing[selectedRoute]
         self.fpl.route = self.fpl.route[5:-5]
         self.importRouteTop.destroy()
-        self.updateContent()
-    
-    def acLoadCB(self):
-        acLoadSelected = self.acLoadListboxTl.curselection()
-        acLoadSelected = acLoadSelected[0]
-        acLoadSelected = list(self.acTemplates.keys())[acLoadSelected]
-        template = self.acTemplates[acLoadSelected]
-        
-        # Assign values to FPL.
-        self.fpl.actype = acLoadSelected
-        self.fpl.equipment = template[0]
-        self.fpl.transponder = template[1]
-        
-        matchObj = re.search(r'PBN/\w+', self.fpl.other,flags=re.A)  # @UndefinedVariable
-        if matchObj is not None:
-            self.fpl.other = self.fpl.other.replace(self.fpl.other[matchObj.start():matchObj.end()], '')
-        self.fpl.other = re.sub('  +',' ',self.fpl.other)
-        self.fpl.other = self.fpl.other.strip()
-        self.fpl.other = 'PBN/{} {}'.format(template[2],self.fpl.other)
-        self.fpl.other = self.fpl.other.strip()
-        
-        self.fpl.wakecat = template[3]
-        self.fpl.speed = template[4]
-        self.fpl.pob = template[6]
-        
-        # Update Fields and destroy window.
-        self.acLoadTop.destroy()
         self.updateContent()
     
     def e_callsignCB(self,*args):  #@UnusedVariable
