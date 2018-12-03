@@ -78,7 +78,6 @@ class FPLGUI:
         # Get database folder.
         self.databaseDir = os.path.join(os.path.dirname(os.getcwd()),'database')
         self.supportFilesDir = os.path.join(os.path.dirname(os.getcwd()),'supportFiles')
-        self.navdataDir = os.path.join(os.path.dirname(os.getcwd()),'nav_data')     #TODO: Change to some logic to find those
         
         # check options for X-Plane directory
         ask4dir = False
@@ -121,6 +120,17 @@ class FPLGUI:
             
             with open(os.path.join(self.databaseDir,'FPLGUI.cfg'),'w') as configFile:
                 self.config.write(configFile)
+        
+        # Get navdata folder.
+        if os.path.exists(os.path.join(self.xPlaneDir,'Custom Data','earth_fix.dat')) and \
+           os.path.exists(os.path.join(self.xPlaneDir,'Custom Data','earth_nav.dat')) and \
+           os.path.exists(os.path.join(self.xPlaneDir,'Custom Data','earth_awy.dat')) and \
+           os.path.exists(os.path.join(self.xPlaneDir,'Custom Data','apt.csv')):
+            self.navdataDir = os.path.join(self.xPlaneDir,'Custom Data')
+        else:
+            self.navdataDir = os.path.join(self.xPlaneDir,'Resources','default data')
+        
+        
         
         #inititalize Fpl-object
         self.fplPath = os.path.join(self.xPlaneDir,'Resources\\plugins\\X-IvAp Resources\\Flightplans')
@@ -974,6 +984,8 @@ class FPLGUI:
     
     def getAcTemplates(self):
         self.acTemplates = {}
+        if not os.path.exists(os.path.join(self.databaseDir,'aircraft.csv')):
+            open(os.path.join(self.databaseDir,'aircraft.csv'),'w').close()
         with open(os.path.join(self.databaseDir,'aircraft.csv')) as acFile:
             for lineNr,line in enumerate(acFile):
                 if lineNr:
