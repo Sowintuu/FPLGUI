@@ -1,61 +1,56 @@
-"""
-FPLGUI - GUI to set up flightplan for XPlane and IVAO with other useful functions
-Copyright (C) 2018  Oliver Clemens
+#!/usr/bin/python
+# -*- coding: iso-8859-15 -*-
+#==============================================================================
+# FPLGUI - GUI to set up flightplan for XPlane and IVAO with other useful functions
+# Copyright (C) 2018  Oliver Clemens
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# 
+#==============================================================================
+# CHANGELOG
+# 
+# version 0.3.2 - 03.12.2018
+# - Fixed nav data location.
+# 
+# version 0.3.1 - 30.11.2018
+# - Added saveTemplate method.
+# - Removed window for acTemplate. Now uses the actype field.
+# - Replaced self-built dialogs by built-in dialogs
+# 
+# version 0.3 - 28.11.2018
+# - Added route export to XP
+# - Added input filter for all fields
+# - Added first implementation of ac Database
+# 
+# version 0.2 - 31.07.2017
+# - added route import from IVAO DE
+# 
+# version 0.1 - 25.05.2017
+# - first version
+# 
+#==============================================================================
+# ROADMAP
+# 
+# - import route from IVAO database
+# - options
+#     -> place anywhere
+#     -> routesUpdateDate
+# - deptime = now + 0030
+# - additional options
+# 
+#==============================================================================
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-=========================================================================
-name         : FPLGUI
-author       : Oliver Clemens
-version      : 0.3
-date         : 31.07.2017
-description  : GUI to set up flightplan for XPlane with other useful functions
-note         : l_ = label
-               e_ = edit
-               o_ = option menu
-               b_ = button
-
-=========================================================================
-version 0.3.1 - 30.11.2018
-- Added saveTemplate method.
-- Removed window for acTemplate. Now uses the actype field.
-- Replaced self-built dialogs by built-in dialogs
-
-version 0.3 - 28.11.2018
-- Added route export to XP
-- Added input filter for all fields
-- Added first implementation of ac Database
-
-version 0.2 - 31.07.2017
-- added route import from IVAO DE
-
-version 0.1 - 25.05.2017
-- first version
-
-=========================================================================
-roadmap
-- import route from IVAO database
-- options
-    -> place anywhere
-    -> routesUpdateDate
-- deptime = now + 0030
-- additional options
-
-=========================================================================
-"""
-
-## import
 import time
 import os
 import re
@@ -71,7 +66,7 @@ from tkinter.messagebox import showwarning
 from Fpl import Fpl
 import avFormula
 
-## chapter
+# chapter
 class FPLGUI:
 
     def __init__(self):
