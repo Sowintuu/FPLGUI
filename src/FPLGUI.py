@@ -54,6 +54,7 @@
 #     -> routesUpdateDate
 # - deptime = now + 0030
 # - additional options
+# - Show skyvector button
 # 
 #==============================================================================
 
