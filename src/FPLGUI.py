@@ -19,6 +19,12 @@
 # 
 #==============================================================================
 # CHANGELOG
+#
+# version 0.3.3 - 05.12.2018
+# - Altitude added to fms files
+# - incremental number for same fms files
+# - Fix: Reversed airway direction
+# - Fix: Starting FPLGUI from another location
 # 
 # version 0.3.2 - 03.12.2018
 # - Fixed nav data location.
@@ -71,8 +77,9 @@ class FPLGUI:
 
     def __init__(self):
         # Get database folder.
-        self.databaseDir = os.path.join(os.path.dirname(os.getcwd()),'database')
-        self.supportFilesDir = os.path.join(os.path.dirname(os.getcwd()),'supportFiles')
+        self.srcDir = os.path.dirname(os.path.abspath(__file__))
+        self.databaseDir = os.path.join(os.path.dirname(self.srcDir),'database')
+        self.supportFilesDir = os.path.join(os.path.dirname(self.srcDir),'supportFiles')
         
         # check options for X-Plane directory
         ask4dir = False
@@ -635,7 +642,7 @@ class FPLGUI:
 #             lastUpdate = int(time.time())
 #             dbUpdated = True
             
-            DataFile = open(os.getcwd() + r"\routeDatabase.txt",'w')
+            DataFile = open(self.srcDir + r"\routeDatabase.txt",'w')
             DataFile.write(database)
             DataFile.close()
     
@@ -827,11 +834,18 @@ class FPLGUI:
         self.updateFpl()
         
         # Get file path for export.
-        fmsFilePath = os.path.join(self.xPlaneDir,'Output','FMS plans','{}{}.fms'.format(self.fpl.depicao,self.fpl.desticao))
-        #TODO: Implement handling for existing files.
-        
+        fileCount = 0
+        fmsFilePath = os.path.abspath(__file__)
+        while os.path.isfile(fmsFilePath):
+            fileCount += 1
+            fmsFilePath = os.path.join(self.xPlaneDir,'Output','FMS plans','{}{}{:02}.fms'.format(self.fpl.depicao,self.fpl.desticao,fileCount))
+
         # Get coordinates of dep.
         curCoordinates = self.fpl.airports[self.fpl.depicao]
+        
+        # Get start altitude.
+        curAltitude = int(self.fpl.level) * 100
+        newAltitude = curAltitude
         
         # Remove SID/STAR from route and split in parts
         route = re.sub('[A-Z]{5}\d[A-Z]','',self.fpl.route).strip()
@@ -850,9 +864,21 @@ class FPLGUI:
         for rpId,rp in enumerate(route):
             if not(rpId % 2):
                 # Waypoint
-                curWaypointName = rp
+                
+                # Split altitude from wp
+                if '/' in rp:
+                    wpSplit = rp.split('/')
+                    curWaypointName = wpSplit[0]
+                    altMatch = re.search('F\d+', wpSplit[1])
+                    if altMatch is not None:
+                        newAltitude = int(wpSplit[1][altMatch.start()+1:altMatch.end()]) * 100
+                else:
+                    curWaypointName = rp
+                
                 if curAirway is None:
                     # After DCT
+                    curAltitude = newAltitude
+                    
                     curWaypoint = self.fpl.waypoints[curWaypointName]
                     minDistance = 3.2 # slightly greater than pi
                     for wp in curWaypoint:
@@ -860,7 +886,7 @@ class FPLGUI:
                         if distance < minDistance:
                             minDistance = distance
                             nearWp = wp
-                    fmsStr = '{}{} {} 0.000000 {} {}\n'.format(fmsStr,nearWp[2],rp,nearWp[0],nearWp[1])
+                    fmsStr = '{}{} {} {} {} {}\n'.format(fmsStr,nearWp[2],curWaypointName,curAltitude,nearWp[0],nearWp[1])
                     nWaypoints += 1
                     
                 else:
@@ -887,8 +913,11 @@ class FPLGUI:
                         if curWaypointId is not None and lastWaypointId is not None:
                             step = int(copysign(1,curWaypointId - lastWaypointId))
                             break
-                    for wp in range(lastWaypointId+1,curWaypointId+1,step):
-                        fmsStr = '{}{} {} 0.000000 {} {}\n'.format(fmsStr,curAirway[wp][3],curAirway[wp][0],curAirway[wp][1],curAirway[wp][2])
+                    for wp in range(lastWaypointId+step,curWaypointId+step,step):
+                        if curAirway[wp][0] == curWaypointName:
+                            curAltitude = newAltitude
+                        
+                        fmsStr = '{}{} {} {} {} {}\n'.format(fmsStr,curAirway[wp][3],curAirway[wp][0],curAltitude,curAirway[wp][1],curAirway[wp][2])
                         nWaypoints += 1
                         
                     curAirway = None
@@ -904,12 +933,12 @@ class FPLGUI:
                                                                        self.fpl.depicao,curCoordinates[0],curCoordinates[1],
                                                                        fmsStr)
         
-        print(fmsStr)
+#         print(fmsStr)
         
         with open(fmsFilePath,'w') as fmsFile:
             fmsFile.write(fmsStr)
             
-        print('Exported to XP!')
+        print('fms file exported to XP!')
         
     def acLoad(self):
         
