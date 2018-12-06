@@ -827,7 +827,7 @@ class FPLGUI:
         self.updateFpl()
         
         # Get file path for export.
-        fmsFilePath = os.path.join(self.xPlaneDir,'Outputs','fms plans','{}{}.fms'.format(self.fpl.depicao,self.fpl.desticao))
+        fmsFilePath = os.path.join(self.xPlaneDir,'Output','FMS plans','{}{}.fms'.format(self.fpl.depicao,self.fpl.desticao))
         #TODO: Implement handling for existing files.
         
         # Get coordinates of dep.
