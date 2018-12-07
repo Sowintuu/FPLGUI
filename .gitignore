@@ -1,6 +1,5 @@
 # database folder
 /database/
-!/database/README.txt
 
 # compiled python files
 *.pyc
