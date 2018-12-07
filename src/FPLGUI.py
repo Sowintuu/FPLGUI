@@ -420,6 +420,7 @@ class FPLGUI:
         # Start master mainloop.
         self.master.mainloop()
     
+    
     def updateContent(self):
         ## row 0-1 ##
         ## callsign
@@ -564,6 +565,7 @@ class FPLGUI:
         self.fpl.load(filepath)
         self.updateContent()
     
+    
     def save(self):
         self.updateFpl()
         filepath = asksaveasfilename(filetypes=[("X-Plane Flightplan","*.fpl"),("All","*")],initialdir=self.fpl.path)
@@ -572,7 +574,6 @@ class FPLGUI:
         
         self.fpl.save(filepath)
         print("saved!")
-        
     
     
     def send(self):
@@ -832,6 +833,7 @@ class FPLGUI:
         print('exported (FF A320)!')
         
     def export2xp(self):
+        #TODO: Adjust to new file version
         self.updateFpl()
         
         # Get file path for export.
