@@ -1,43 +1,24 @@
-"""
-Fpl Class - to describe a flightplan
-Copyright (C) 2017-2018  Oliver Clemens
+#!/usr/bin/python
+# -*- coding: iso-8859-15 -*-
+#==============================================================================
+# Fpl - Class to describe a flightplan
+# Copyright (C) 2018  Oliver Clemens
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#==============================================================================
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-=========================================================================
-name            : Fpl
-author          : Oliver Clemens
-version         : 0.1
-date            : 25.05.2017
-description     : 
-note            : 
-
-=========================================================================
-version 0.2 - 28.11.2018
-- added possibility to read navdata to create flightplans
-
-version 0.1 - 25.05.2017
-- first version
-
-=========================================================================
-"""
-
-## import
-# import time
 import re
-# import os
-# import urllib2
 import configparser
 import avFormula
 from copy import deepcopy
@@ -201,9 +182,6 @@ class Airway(object):
         self.name = name
         self.parts = []
         
-        #TODO: remove after debug and testing
-#         self.dbAirway = 'V7'
-        
     def update(self,fix1,fix2):
         
         # Check parts if one or both fixed are alredy included and get their positions fix<n>Part.
@@ -260,154 +238,3 @@ class Airway(object):
             if fix2Part > fix1Part:
                 fix2Part -= 1
             self.parts.pop(fix2Part)
-        
-        
-#         #---- load plan: old method ----#
-#TODO: remove code after testing        
-#         fplFile = open(path)
-#         fplText = fplFile.read()
-#         fplFile.close()
-#         
-#         reFind = re.search("(?<=CALLSIGN\=)\w*(?=\r)",fplText)
-#         if reFind:
-#             self.callsign = reFind.group()
-#         else:
-#             self.callsign = ""
-#         
-#         reFind = re.search("(?<=PIC\=)[\w /]*",fplText)
-#         if reFind:
-#             self.pic = reFind.group()
-#         else:
-#             self.pic = ""
-#         
-#         reFind = re.search("(?<=SPEEDTYPE\=)[NM]?(?=\r)",fplText)
-#         if reFind:
-#             self.speedtype = reFind.group()
-#         else:
-#             self.speedtype = ""
-#         
-#         reFind = re.search("(?<=POB\=)[\d]*(?=\r)",fplText)
-#         if reFind:
-#             self.pob = reFind.group()
-#         else:
-#             self.pob = ""
-#         
-#         reFind = re.search("(?<=PIC\=)[\w]*(?=\r)",fplText)
-#         if reFind:
-#             self.pic = reFind.group()
-#         else:
-#             self.pic = ""
-#         
-#         reFind = re.search("(?<=ENDURANCE\=)[\d]*(?=\r)",fplText)
-#         if reFind:
-#             self.endurance = reFind.group()
-#         else:
-#             self.endurance = ""
-#         
-#         reFind = re.search("(?<=OTHER\=)[\w /]*",fplText)
-#         if reFind:
-#             self.other = reFind.group()
-#         else:
-#             self.other = ""
-#         
-#         reFind = re.search("(?<=ALT2ICAO\=)[\w]*(?=\r)",fplText)
-#         if reFind:
-#             self.alt2icao = reFind.group()
-#         else:
-#             self.alt2icao = ""
-#         
-#         reFind = re.search("(?<=ALTICAO\=)[\w]*(?=\r)",fplText)
-#         if reFind:
-#             self.alticao = reFind.group()
-#         else:
-#             self.alticao = ""
-#         
-#         reFind = re.search("(?<=EET\=)[\d]*(?=\r)",fplText)
-#         if reFind:
-#             self.eet = reFind.group()
-#         else:
-#             self.eet = ""
-#         
-#         reFind = re.search("(?<=DESTICAO\=)[\w]*(?=\r)",fplText)
-#         if reFind:
-#             self.desticao = reFind.group()
-#         else:
-#             self.desticao = ""
-#         
-#         reFind = re.search("(?<=\nROUTE\=)[\w\ /]*",fplText)
-#         if reFind:
-#             self.route = reFind.group()
-#         else:
-#             self.route = ""
-#         
-#         reFind = re.search("(?<=LEVEL\=)[\d]*(?=\r)",fplText)
-#         if reFind:
-#             self.level = reFind.group()
-#         else:
-#             self.level = ""
-#         
-#         reFind = re.search("(?<=LEVELTYPE\=)[AFVR]*(?=\r)",fplText)
-#         if reFind:
-#             self.leveltype = reFind.group()
-#         else:
-#             self.leveltype = ""
-#         
-#         reFind = re.search("(?<=SPEED\=)[\d]*(?=\r)",fplText)
-#         if reFind:
-#             self.speed = reFind.group()
-#         else:
-#             self.speed = ""
-#         
-#         reFind = re.search("(?<=DEPTIME\=)[\d]*(?=\r)",fplText)
-#         if reFind:
-#             self.deptime = reFind.group()
-#         else:
-#             self.deptime = ""
-#         
-#         reFind = re.search("(?<=DEPICAO\=)[\w]*(?=\r)",fplText)
-#         if reFind:
-#             self.depicao = reFind.group()
-#         else:
-#             self.depicao = ""
-#         
-#         reFind = re.search("(?<=TRANSPONDER\=)[\w]*(?=\r)",fplText)
-#         if reFind:
-#             self.transponder = reFind.group()
-#         else:
-#             self.transponder = ""
-#         
-#         reFind = re.search("(?<=EQUIPMENT\=)[\w]*(?=\r)",fplText)
-#         if reFind:
-#             self.equipment = reFind.group()
-#         else:
-#             self.equipment = ""
-#         
-#         reFind = re.search("(?<=WAKECAT\=)[LMHJ]?(?=\r)",fplText)
-#         if reFind:
-#             self.wakecat = reFind.group()
-#         else:
-#             self.wakecat = ""
-#         
-#         reFind = re.search("(?<=ACTYPE\=)[\w]*(?=\r)",fplText)
-#         if reFind:
-#             self.actype = reFind.group()
-#         else:
-#             self.actype = ""
-#         
-#         reFind = re.search("(?<=NUMBER\=)[\d]*(?=\r)",fplText)
-#         if reFind:
-#             self.number = reFind.group()
-#         else:
-#             self.number = ""
-#         
-#         reFind = re.search("(?<=FLIGHTTYPE\=)[SNGXM]?(?=\r)",fplText)
-#         if reFind:
-#             self.flighttype = reFind.group()
-#         else:
-#             self.flighttype = ""
-#         
-#         reFind = re.search("(?<=RULES\=)[VIZY]?(?=\r)",fplText)
-#         if reFind:
-#             self.rules = reFind.group()
-#         else:
-#             self.rules = ""
