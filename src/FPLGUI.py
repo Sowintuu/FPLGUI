@@ -20,6 +20,10 @@
 #==============================================================================
 # CHANGELOG
 #
+# version 0.3.4 - 07.12.2018
+# - Show at Skyvector implemented (not tested)
+# - Fix: fms export to new format
+#
 # version 0.3.3 - 05.12.2018
 # - Altitude added to fms files
 # - incremental number for same fms files
@@ -52,15 +56,14 @@
 # - options
 #     -> place anywhere
 #     -> routesUpdateDate
-# - deptime = now + 0030
 # - additional options
-# - Show skyvector button
 # 
 #==============================================================================
 
 import time
 import os
 import re
+
 from math import radians, copysign
 from warnings import warn
 from urllib.request import urlopen
@@ -72,6 +75,7 @@ from tkinter.filedialog import askdirectory, askopenfilename, asksaveasfilename
 from tkinter.messagebox import showwarning
 from Fpl import Fpl
 import avFormula
+
 
 # chapter
 class FPLGUI:
@@ -133,8 +137,6 @@ class FPLGUI:
         else:
             self.navdataDir = os.path.join(self.xPlaneDir,'Resources','default data')
         
-        
-        
         #inititalize Fpl-object
         self.fplPath = os.path.join(self.xPlaneDir,'Resources\\plugins\\X-IvAp Resources\\Flightplans')
         self.fpl = Fpl(self.fplPath)
@@ -173,10 +175,13 @@ class FPLGUI:
         
         utilmenu = Menu(menubar,tearoff=0)
         utilmenu.add_command(label="Import Route",command=self.importRoute)
+        utilmenu.add_separator()
         utilmenu.add_command(label="Simbrief",command=self.simbrief)
         utilmenu.add_command(label="Flightaware",command=self.flightaware)
-        utilmenu.add_command(label="Export to FF A320",command=self.export2FFA320)
+        utilmenu.add_separator()
+        utilmenu.add_command(label="Show at Skyvector",command=self.showSkyvector)
         utilmenu.add_command(label="Export to X-Plane",command=self.export2xp)
+        utilmenu.add_command(label="Export to FF A320",command=self.export2FFA320)
         utilmenu.add_separator()
         utilmenu.add_command(label="Options",command=self.options)
         menubar.add_cascade(label="Extras",menu=utilmenu)
@@ -419,8 +424,7 @@ class FPLGUI:
         
         # Start master mainloop.
         self.master.mainloop()
-    
-    
+        
     def updateContent(self):
         ## row 0-1 ##
         ## callsign
@@ -565,7 +569,6 @@ class FPLGUI:
         self.fpl.load(filepath)
         self.updateContent()
     
-    
     def save(self):
         self.updateFpl()
         filepath = asksaveasfilename(filetypes=[("X-Plane Flightplan","*.fpl"),("All","*")],initialdir=self.fpl.path)
@@ -574,6 +577,7 @@ class FPLGUI:
         
         self.fpl.save(filepath)
         print("saved!")
+        
     
     
     def send(self):
@@ -708,7 +712,17 @@ class FPLGUI:
                 selcal = ""
         
         
-        url = "https://www.simbrief.com/system/dispatch.php?airline={}&fltnum={}&type={}&orig={}&dest={}&deph={}&depm={}&reg={}&selcal={}&route={}&fl={}00".format(airline,fltnum,self.fpl.actype,self.fpl.depicao,self.fpl.desticao,deph,depm,reg,selcal,self.fpl.route,self.fpl.level)
+        url = "https://www.simbrief.com/system/dispatch.php?airline={}&fltnum={}&type={}&orig={}&dest={}&deph={}&depm={}&reg={}&selcal={}&route={}&fl={}00".format(airline,
+                                                                                                                                                                   fltnum,
+                                                                                                                                                                   self.fpl.actype,
+                                                                                                                                                                   self.fpl.depicao,
+                                                                                                                                                                   self.fpl.desticao,
+                                                                                                                                                                   deph,
+                                                                                                                                                                   depm,
+                                                                                                                                                                   reg,
+                                                                                                                                                                   selcal,
+                                                                                                                                                                   self.fpl.route,
+                                                                                                                                                                   self.fpl.level)
         webbrowser.open(url,new=2)
     
     ## Display flights for departure and destination airport on flightaware.
@@ -833,7 +847,6 @@ class FPLGUI:
         print('exported (FF A320)!')
         
     def export2xp(self):
-        #TODO: Adjust to new file version
         self.updateFpl()
         
         # Get file path for export.
@@ -889,7 +902,7 @@ class FPLGUI:
                         if distance < minDistance:
                             minDistance = distance
                             nearWp = wp
-                    fmsStr = '{}{} {} {} {} {}\n'.format(fmsStr,nearWp[2],curWaypointName,curAltitude,nearWp[0],nearWp[1])
+                    fmsStr = '{}{} {} DRCT {} {} {}\n'.format(fmsStr,nearWp[2],curWaypointName,curAltitude,nearWp[0],nearWp[1])
                     nWaypoints += 1
                     
                 else:
@@ -920,7 +933,7 @@ class FPLGUI:
                         if curAirway[wp][0] == curWaypointName:
                             curAltitude = newAltitude
                         
-                        fmsStr = '{}{} {} {} {} {}\n'.format(fmsStr,curAirway[wp][3],curAirway[wp][0],curAltitude,curAirway[wp][1],curAirway[wp][2])
+                        fmsStr = '{}{} {} {} {} {} {}\n'.format(fmsStr,curAirway[wp][3],curAirway[wp][0],curAirwayName,curAltitude,curAirway[wp][1],curAirway[wp][2])
                         nWaypoints += 1
                         
                     curAirway = None
@@ -930,11 +943,17 @@ class FPLGUI:
                 lastWaypointName = curWaypointName
                 
         curCoordinates = self.fpl.airports[self.fpl.desticao]
-        fmsStr = '{}1 {} 0.000000 {} {}'.format(fmsStr,self.fpl.desticao,curCoordinates[0],curCoordinates[1])
+        fmsStr = '{}1 {} ADES 0.000000 {} {}'.format(fmsStr,self.fpl.desticao,curCoordinates[0],curCoordinates[1])
+        nWaypoints += 1
         
-        fmsStr = 'I\n3 version\n1\n{}\n1 {} 0.000000 {} {}\n{}'.format(nWaypoints,
-                                                                       self.fpl.depicao,curCoordinates[0],curCoordinates[1],
-                                                                       fmsStr)
+        curCoordinates = self.fpl.airports[self.fpl.depicao]
+        fmsStr = 'I\n1100 Version\nCYCLE {}\nADEP {}\nADES {}\nNUMENR {}\n1 {} ADEP 0.000000 {} {}\n{}'.format(self.fpl.cycleNumber,
+                                                                                                               self.fpl.depicao,
+                                                                                                               self.fpl.desticao,
+                                                                                                               nWaypoints,
+                                                                                                               self.fpl.depicao,
+                                                                                                               curCoordinates[0],curCoordinates[1],
+                                                                                                               fmsStr)
         
 #         print(fmsStr)
         
@@ -1020,6 +1039,24 @@ class FPLGUI:
                     self.acTemplates[lineSplit[0]] = [lineSplit[1],lineSplit[2],lineSplit[3],lineSplit[4],lineSplit[5],lineSplit[6]]
     
     
+    
+    def showSkyvector(self):
+        # Calculate middle point.
+        depCoordinates = self.fpl.airports[self.fpl.depicao]
+        destCoordinates = self.fpl.airports[self.fpl.desticao]
+        intermediatePoint = avFormula.gcIntermediatePoint(depCoordinates[0], destCoordinates[0], depCoordinates[1], destCoordinates[1])
+        
+        skyvectorUrl = 'http://skyvector.com/?ll={:9.6f},{:9.6f}&chart=304&zoom=6&fpl=%20{}%20{}%20{}'.format(intermediatePoint[0],
+                                                                                                     intermediatePoint[1],
+                                                                                                     self.fpl.depicao,
+                                                                                                     self.fpl.route.replace(' ','%20'),
+                                                                                                     self.fpl.desticao)
+        webbrowser.open(skyvectorUrl,new=2)
+#         print(skyvectorUrl)
+#         print('http://skyvector.com/?ll=36.010215,29.864597&chart=304&zoom=6&fpl=%20LGAV%20VARIX%20UL995%20RDS%20UM601%20LCA%20UR19%20DESPO%20R19%20KUKLA%20OLBA')
+        
+        
+    # Callbacks
     def routeListCB(self):
         selectedRoute = self.importRouteListboxTl.curselection()
         selectedRoute = selectedRoute[0]

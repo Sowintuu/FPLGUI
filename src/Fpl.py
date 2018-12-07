@@ -113,7 +113,6 @@ class Fpl(object):
             fplFile.write("FLIGHTTYPE={}\r\n".format(self.flighttype))
             fplFile.write("RULES={}\r\n".format(self.rules))
     
-    
     def getFixes(self,fixesFilePath):
         with open(fixesFilePath) as waypointsFile:
             for line in waypointsFile:
@@ -124,7 +123,8 @@ class Fpl(object):
                         self.waypoints.update({lineSplit[2]:[newWaypoint]})
                     else:
                         self.waypoints[lineSplit[2]].append(newWaypoint)
-    
+                elif len(lineSplit) > 1:
+                    self.cycleNumber = re.findall('(?<=data cycle )\d{4}',line)[0]
     
     def getNavaids(self,navaidFilePath):
         with open(navaidFilePath) as navaidFile:
