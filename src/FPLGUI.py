@@ -856,7 +856,7 @@ class FPLGUI:
                     curWaypoint = self.fpl.waypoints[curWaypointName]
                     minDistance = 3.2 # slightly greater than pi
                     for wp in curWaypoint:
-                        distance = avFormula.gcDistance(radians(curCoordinates[0]),radians(curCoordinates[1]),radians(wp[0]),radians(wp[1]))
+                        distance = avFormula.gcDistance(curCoordinates[0],curCoordinates[1],wp[0],wp[1])
                         if distance < minDistance:
                             minDistance = distance
                             nearWp = wp
@@ -1002,7 +1002,7 @@ class FPLGUI:
         # Calculate middle point.
         depCoordinates = self.fpl.airports[self.fpl.depicao]
         destCoordinates = self.fpl.airports[self.fpl.desticao]
-        intermediatePoint = avFormula.gcIntermediatePoint(depCoordinates[0], destCoordinates[0], depCoordinates[1], destCoordinates[1])
+        intermediatePoint = avFormula.gcIntermediatePoint(depCoordinates[0], depCoordinates[1], destCoordinates[0], destCoordinates[1])
         
         skyvectorUrl = 'http://skyvector.com/?ll={:9.6f},{:9.6f}&chart=304&zoom=6&fpl=%20{}%20{}%20{}'.format(intermediatePoint[0],
                                                                                                      intermediatePoint[1],
