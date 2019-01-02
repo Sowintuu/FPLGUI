@@ -30,7 +30,7 @@ import configparser as ConfigParser
 from tkinter import Tk, Menu, Label, Entry, StringVar, OptionMenu, W, END, Toplevel, Button, Listbox, messagebox
 from tkinter.filedialog import askdirectory, askopenfilename, asksaveasfilename
 # from tkinter.simpledialog import askstring
-from tkinter.messagebox import showwarning
+from tkinter.messagebox import showwarning, showinfo
 from Fpl import Fpl
 import avFormula
 
@@ -100,10 +100,10 @@ class FPLGUI:
         self.fpl = Fpl(self.fplPath)
         
         # Load Fixes
-        self.fpl.getFixes(os.path.join(self.navdataDir,'earth_fix.dat'))
-        self.fpl.getNavaids(os.path.join(self.navdataDir,'earth_nav.dat'))
-        self.fpl.getAirports(os.path.join(self.navdataDir,'apt.csv'))
-        self.fpl.getAirways(os.path.join(self.navdataDir,'earth_awy.dat'))
+#         self.fpl.getFixes(os.path.join(self.navdataDir,'earth_fix.dat'))
+#         self.fpl.getNavaids(os.path.join(self.navdataDir,'earth_nav.dat'))
+#         self.fpl.getAirports(os.path.join(self.navdataDir,'apt.csv'))
+#         self.fpl.getAirways(os.path.join(self.navdataDir,'earth_awy.dat'))
         
         # Remove Splash.
         splashWindow.destroy()
@@ -140,6 +140,8 @@ class FPLGUI:
         utilmenu.add_command(label="Show at Skyvector",command=self.showSkyvector)
         utilmenu.add_command(label="Export to X-Plane",command=self.export2xp)
         utilmenu.add_command(label="Export to FF A320",command=self.export2FFA320)
+        utilmenu.add_separator()
+        utilmenu.add_command(label="Show FPL text",command=self.showFplText)
         utilmenu.add_separator()
         utilmenu.add_command(label="Options",command=self.options)
         menubar.add_cascade(label="Extras",menu=utilmenu)
@@ -1010,9 +1012,54 @@ class FPLGUI:
                                                                                                      self.fpl.route.replace(' ','%20'),
                                                                                                      self.fpl.desticao)
         webbrowser.open(skyvectorUrl,new=2)
-#         print(skyvectorUrl)
-#         print('http://skyvector.com/?ll=36.010215,29.864597&chart=304&zoom=6&fpl=%20LGAV%20VARIX%20UL995%20RDS%20UM601%20LCA%20UR19%20DESPO%20R19%20KUKLA%20OLBA')
         
+        
+    def showFplText(self):
+        # Get Field contents.
+        self.updateFpl()
+        
+        # Init string.
+        fplString = '(FPL\n'
+        
+        # Complete string.
+        fplString = '{}-{}-{}{}\n'.format(fplString,
+                                          self.fpl.callsign,
+                                          self.fpl.rules,
+                                          self.fpl.flighttype)
+        fplString = '{}-{}{}/{}-{}/{}\n'.format(fplString,
+                                                self.fpl.number,
+                                                self.fpl.actype,
+                                                self.fpl.wakecat,
+                                                self.fpl.equipment,
+                                                self.fpl.transponder)
+        fplString = '{}-{}{}\n'.format(fplString,
+                                       self.fpl.depicao,
+                                       self.fpl.deptime)
+        fplString = '{}-N{:04}F{:03} {}\n'.format(fplString,
+                                                  int(self.fpl.speed),
+                                                  int(self.fpl.level),
+                                                  self.fpl.route)
+        fplString = '{}-{}{} {} {}\n'.format(fplString,
+                                             self.fpl.desticao,
+                                             self.fpl.eet,
+                                             self.fpl.alticao,
+                                             self.fpl.alt2icao)
+        fplString = '{}-{})'.format(fplString,self.fpl.other)
+        
+        # Print string.
+        print(fplString)
+        
+        # Copy to clipboard.
+        r = Tk()
+        r.withdraw()
+        r.clipboard_clear()
+        r.clipboard_append(str(fplString))
+        r.update()
+        r.destroy()
+        
+        # Show in window.
+        showinfo("Flightplan text", '{}\n\n(Copied to clipboard.)'.format(fplString))
+
         
     # Callbacks
     def routeListCB(self):
