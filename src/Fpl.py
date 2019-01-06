@@ -177,7 +177,7 @@ class Fpl(object):
                             for fi2id,fi2 in enumerate(fixes2):
                                 if int(lineSplit[5]) != fi2[2]:
                                     continue
-                                distance = avFormula.gcDistance(fi1[0],fi2[0],fi1[1],fi2[1])
+                                distance = avFormula.gcDistance(fi1[0],fi1[1],fi2[0],fi2[1])
                                 if distance < distanceMin:
                                     nearest = [fi1id,fi2id]
                                     distanceMin = distance
