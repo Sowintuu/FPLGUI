@@ -725,8 +725,9 @@ class FPLGUI:
         # For show Simbiref.
         else:
             url = '{}&planformat=LIDO&units=KGS&navlog=1&etops=1&stepclimbs=0&tlr=0&notams=1&firnot=1&maps=detail'.format(url)
-        print(url)
-        pass
+#         print(url)
+#         pass
+
         # Open simbrief.
         webbrowser.open(url,new=2)
     

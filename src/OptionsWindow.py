@@ -53,6 +53,7 @@ class OptionsWindow(object):
         self.getCurrentOptions()
         
         # Set elements.
+        #------------- PATHS -------------#
         # Row 0-1.
         self.l_xpUse = Label(self.master, text="Use XPlane")
         self.l_xpUse.grid(row=0, column=0)
@@ -98,8 +99,28 @@ class OptionsWindow(object):
                                     state='disabled')
         self.b_xpDirBrowse.grid(row=3,column=4)
         
+        #------------- SIMBIREF -------------#
+        # Row 4
+        Label(self.master).grid(row=4,column=0)
+        
+        # Row 5
+        Label(self.master, text="Simbiref").grid(row=5, column=0)
+        
+        # Row 6
+        Label(self.master, text='OPF Layout').grid(row=6, column=0)
+        
+        self.opfFormat = StringVar(self.master)
+#         self.opfFormat.set('LIDO')
+        self.e_opfFormat = Entry(self.master,textvariable=self.opfFormat)#,width=50)
+        self.e_opfFormat.grid(row=6, column=1)
+        
+        
+        
+        
+        # Specify closing action.
         self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
         
+        # Make master window wait for closing.
         root.wait_window(self.master)
     
     def getCurrentOptions(self):
@@ -125,9 +146,15 @@ class OptionsWindow(object):
             self.xPlaneDir.set(None)
         
         config = ConfigParser.RawConfigParser()
+        
+        # General
         config.add_section('FPLGUI')
         config.set('FPLGUI', 'XPLANEDIR', self.xPlaneDir.get())
         config.set('FPLGUI', 'XPUSE', self.xpUse.get())
+        
+        # Simbrief
+        config.add_section('SIMBRIEF')
+        config.set('SIMBRIEF', 'opfformat', self.opfFormat.get())
         
         with open(os.path.join(self.optionsFile),'w') as configFile:
             config.write(configFile)
@@ -145,5 +172,5 @@ class OptionsWindow(object):
     
 if __name__ == '__main__':
     root = Tk()
-    window = OptionsWindow(root)
+    window = OptionsWindow(root,r'E:\gitserver\FPLGUI\database')
 
