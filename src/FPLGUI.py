@@ -4,21 +4,22 @@
 # FPLGUI - GUI to set up flightplan for XPlane and IVAO with other useful functions
 # Copyright (C) 2018  Oliver Clemens
 # 
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
 # 
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
 # 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <https://www.gnu.org/licenses/>.
 #==============================================================================
 
 import time
+import datetime
 import os
 import re
 
@@ -30,44 +31,36 @@ import configparser as ConfigParser
 from tkinter import Tk, Menu, Label, Entry, StringVar, OptionMenu, W, END, Toplevel, Button, Listbox, messagebox
 from tkinter.filedialog import askdirectory, askopenfilename, asksaveasfilename
 # from tkinter.simpledialog import askstring
-from tkinter.messagebox import showwarning
+from tkinter.messagebox import showwarning, showinfo
 from Fpl import Fpl
 import avFormula
+from OptionsWindow import OptionsWindow
 
 
 # chapter
 class FPLGUI:
-
+    
+    SPLASH_WIDTH = 350
+    SPLASH_HEIGHT = 250
+    
     def __init__(self):
         # Get database folder.
         self.srcDir = os.path.dirname(os.path.abspath(__file__))
         self.databaseDir = os.path.join(os.path.dirname(self.srcDir),'database')
         self.supportFilesDir = os.path.join(os.path.dirname(self.srcDir),'supportFiles')
         
-        # check options for X-Plane directory
-        ask4dir = False
-        if os.path.isfile(os.path.join(self.databaseDir,'FPLGUI.cfg')):
-            self.config = ConfigParser.RawConfigParser()
-            self.config.read(os.path.join(self.databaseDir,'FPLGUI.cfg'))
-            try:
-                self.xPlaneDir = self.config.get('FPLGUI','XPLANEDIR')
-            except ConfigParser.NoSectionError:
-                ask4dir = True
-            except ConfigParser.NoOptionError:
-                ask4dir = True
-        else:
-            ask4dir = True
+        # Create Database folder.
+        if not os.path.isdir(self.databaseDir):
+            os.makedirs(self.databaseDir)
         
         # Show splash
-        SPLASH_WIDTH = 350
-        SPLASH_HEIGHT = 250
         splashWindow = Tk()
         splashWindow.title('FPLGUI')
         self.screenWidth = splashWindow.winfo_screenwidth() # width of the screen
         self.screenHeight = splashWindow.winfo_screenheight() # height of the screen
-        x = round((self.screenWidth/2) - (SPLASH_WIDTH/2))
-        y = round((self.screenHeight/2) - (SPLASH_HEIGHT/2))
-        splashWindow.geometry('{}x{}+{}+{}'.format(SPLASH_WIDTH,SPLASH_HEIGHT,x,y))
+        x = round((self.screenWidth/2) - (self.SPLASH_WIDTH/2))
+        y = round((self.screenHeight/2) - (self.SPLASH_HEIGHT/2))
+        splashWindow.geometry('{}x{}+{}+{}'.format(self.SPLASH_WIDTH,self.SPLASH_HEIGHT,x,y))
         splashWindow.resizable(0, 0)
         splashWindow.iconbitmap(os.path.join(self.supportFilesDir,'FPLGUI.ico'))
         Label(splashWindow,text="Loading Navdata, Please wait.",justify='left',font=("Helvetica", 14)).place(relx=0.1,rely=0.1,anchor='nw')
@@ -75,16 +68,18 @@ class FPLGUI:
             Label(splashWindow, text=startupFile.read(),justify='left',font=("Helvetica", 8)).place(relx=0.1, rely=0.4, anchor='nw')
         splashWindow.update()
         
-        # let user select X-Plane dir and write options
-        if ask4dir:
-            time.sleep(3)
-            self.xPlaneDir = askdirectory(mustexist=True,initialdir='C:\\',title='Select X Plane directory',parent=splashWindow).replace('/','\\')
-            self.config = ConfigParser.RawConfigParser()
-            self.config.add_section('FPLGUI')
-            self.config.set('FPLGUI', 'XPLANEDIR', self.xPlaneDir)
+        # check options for X-Plane directory
+        self.getOptions()
+        
+        # Let user select X-Plane dir and write options.
+        if self.xPlaneDir is None:
+            OptionsWindow(splashWindow,self.databaseDir,'FPLGUI: Set inital options')
+            self.getOptions()
             
-            with open(os.path.join(self.databaseDir,'FPLGUI.cfg'),'w') as configFile:
-                self.config.write(configFile)
+        while self.xPlaneDir is None:
+            showwarning('XplaneDir not specified', 'XplaneDir is mandatory. Specify it first!')
+            OptionsWindow(splashWindow,self.databaseDir,'FPLGUI: Set inital options')
+            self.getOptions()
         
         # Get navdata folder.
         if os.path.exists(os.path.join(self.xPlaneDir,'Custom Data','earth_fix.dat')) and \
@@ -100,10 +95,10 @@ class FPLGUI:
         self.fpl = Fpl(self.fplPath)
         
         # Load Fixes
-        self.fpl.getFixes(os.path.join(self.navdataDir,'earth_fix.dat'))
-        self.fpl.getNavaids(os.path.join(self.navdataDir,'earth_nav.dat'))
-        self.fpl.getAirports(os.path.join(self.navdataDir,'apt.csv'))
-        self.fpl.getAirways(os.path.join(self.navdataDir,'earth_awy.dat'))
+#         self.fpl.getFixes(os.path.join(self.navdataDir,'earth_fix.dat'))
+#         self.fpl.getNavaids(os.path.join(self.navdataDir,'earth_nav.dat'))
+#         self.fpl.getAirports(os.path.join(self.navdataDir,'apt.csv'))
+#         self.fpl.getAirways(os.path.join(self.navdataDir,'earth_awy.dat'))
         
         # Remove Splash.
         splashWindow.destroy()
@@ -134,14 +129,17 @@ class FPLGUI:
         utilmenu = Menu(menubar,tearoff=0)
         utilmenu.add_command(label="Import Route",command=self.importRoute)
         utilmenu.add_separator()
-        utilmenu.add_command(label="Simbrief",command=self.simbrief)
+        utilmenu.add_command(label="Open Simbrief",command=self.simbrief)
+        utilmenu.add_command(label="Simbrief process",command= lambda: self.simbrief(True))
         utilmenu.add_command(label="Flightaware",command=self.flightaware)
         utilmenu.add_separator()
         utilmenu.add_command(label="Show at Skyvector",command=self.showSkyvector)
         utilmenu.add_command(label="Export to X-Plane",command=self.export2xp)
         utilmenu.add_command(label="Export to FF A320",command=self.export2FFA320)
         utilmenu.add_separator()
-        utilmenu.add_command(label="Options",command=self.options)
+        utilmenu.add_command(label="Show FPL text",command=self.showFplText)
+        utilmenu.add_separator()
+        utilmenu.add_command(label="Options",command=lambda: OptionsWindow(self.master,self.databaseDir))
         menubar.add_cascade(label="Extras",menu=utilmenu)
         
         self.master.config(menu=menubar)
@@ -567,30 +565,23 @@ class FPLGUI:
         self.e_pob.delete(0, END)
         self.e_pic.delete(0, END)
     
-    def options(self):
-        self.optionsText = self.optionsFile.read()
+    def getOptions(self):
+        # Init options with None
+        self.xPlaneDir = None
         
-        self.top = Toplevel(self.master)
-        
-        if len(self.routing) > 0:
-            Label(self.top, text="X-Plane Path:").grid(row=0, column=0)
-            
-            self.tlEntryXpPath = Entry(self.top)
-            self.tlEntryXpPath.grid(row=0, column=1)
-            
-            self.tlUpdateLabel = Label(self.top, text = "lastUpdated")
-            self.tlUpdateLabel.grid(row=1, column=0)
-            
-            self.tlUpdateDbButton = Button(self.top,text="Update",command=self.updateRouteDbButtonCB,width=80)
-            self.tlOkButton.grid(row=1, column=1)
-            
-            self.tlOkButton = Button(self.top,text="OK",command=self.optionsButtonOkCB,width=80)
-            self.tlOkButton.grid(row=2, column=0)
-            
-            self.tlCancelButton = Button(self.top,text="OK",command=self.optionsButtonCancelCB,width=80)
-            self.tlCancelButton.grid(row=2, column=1)
-            
-            self.master.wait_window(self.top)
+        # Get options
+        if os.path.isfile(os.path.join(self.databaseDir,'FPLGUI.cfg')):
+            self.config = ConfigParser.RawConfigParser()
+            self.config.read(os.path.join(self.databaseDir,'FPLGUI.cfg'))
+            # xPlaneDir
+            try:
+                self.xPlaneDir = self.config.get('FPLGUI','XPLANEDIR')
+            except ConfigParser.NoSectionError:
+                return
+            except ConfigParser.NoOptionError:
+                pass
+            if self.xPlaneDir is not None and not re.match(r'[A-Za-z]:\\',self.xPlaneDir):
+                self.xPlaneDir = None
         
     def updateRouteDbButtonCB(self):
 #         dbUpdated = False
@@ -616,73 +607,136 @@ class FPLGUI:
     def optionsButtonCancelCB(self):
         self.top.destroy()
     
-    def simbrief(self):
+    def simbrief(self,*args):
         self.updateFpl()
         
-        airline = ""
-        fltnum = ""
-        reg = ""
-        selcal = ""
+        url = 'https://www.simbrief.com/system/dispatch.php?'
+        options = ''
         
-        ## airline, fltnum, reg from callsign
-        reFind = re.search("[A-Z]{5}",self.fpl.callsign)
-        if reFind:
-            reg = reFind.group()
+        # Airports.
+        if self.fpl.depicao and self.fpl.desticao:
+            url = '{}&orig={}&dest={}'.format(url,self.fpl.depicao,self.fpl.desticao)
         else:
-            reFindAirline = re.search("[A-Z]{3}(?=\w+)",self.fpl.callsign)
-            reFindFltnum = re.search("(?<=[A-Z]{3})\w+",self.fpl.callsign)
+            showwarning('Airport missing','Departure and destination airport is mandatory for Simbrief.\nSpecify them first!')
+        
+        # Times
+        if self.fpl.deptime:
+            deph = self.fpl.deptime[0:1]
+            depm = self.fpl.deptime[2:3]
+            options = '{}&deph={}&depm={}'.format(options,deph,depm)
+        else:
+            showwarning('Time missing','Departure time is mandatory for Simbrief.\nSpecify it first!')
+            
+            return
+        
+        # Aircraft.
+        if self.fpl.actype:
+            url = '{}&type={}'.format(url,self.fpl.actype)
+        else:
+            showwarning('Aircraft type missing','Aircraft type is mandatory for Simbrief.\nSpecify it first!')
+        
+        # Route.
+        if self.fpl.route:
+            url = '{}&route={}'.format(url,self.fpl.route)
+        else:
+            showinfo('Route missing','The route is missing and will be created by Simbrief.\nNote: These routes are often not CFMU valid!')
+        
+        # Flightlevel.
+        if self.fpl.level:
+            url = '{}&fl={}00'.format(url,self.fpl.level)
+        
+        # Date.
+        reFind = re.search('(?<=DOF/)\d{6}',self.fpl.other)
+        if reFind:
+            date = reFind.group()
+            date = datetime.datetime(int(date[0:2])+2000,int(date[2:4]),int(date[4:6]))
+        else:
+            date = datetime.datetime.today()
+        url = '{}&date={}'.format(url,date.strftime('%d%b%y'))
+        
+        # Airline, fltnum, registration, selcal.
+        airline = ''
+        fltnum = ''
+        registration = ''
+        selcal = ''
+        
+        # Airline, fltnum, registration from Callsign field.
+        reFind = re.search('[A-Z]{5}',self.fpl.callsign)
+        if reFind:
+            registration = reFind.group()
+        else:
+            reFindAirline = re.search('[A-Z]{3}(?=\w+)',self.fpl.callsign)
+            reFindFltnum = re.search('(?<=[A-Z]{3})\w+',self.fpl.callsign)
             if reFindAirline and reFindFltnum:
                 airline = reFindAirline.group()
                 fltnum = reFindFltnum.group()
             else:
-                print("invalid Callsign!")
-            
-        deph = self.fpl.deptime[0:1]
-        depm = self.fpl.deptime[2:3]
+                print('invalid Callsign!')
         
-        ## reg from REG/ or ask
-        if not reg:
-            reFind = re.search("(?<=REG/)[A-Z]{5}",self.fpl.other)
+        # Registration (REG/) from other field.
+        if not registration:
+            reFind = re.search('(?<=REG/)[A-Z]{5}',self.fpl.other)
             if reFind:
-                reg = reFind.group()
-            else:
-#                 reg = askstring("Registration", "Enter a/c registration:")
-#                 if reg is None:
-                    reg = ""
+                registration = reFind.group()
         
-        ## airline from OPR/ or ask
+        # Airline (OPR/) from other field.
         if not airline:
-            reFind = re.search("(?<=OPR/)[A-Z]{3}",self.fpl.other)
+            reFind = re.search('(?<=OPR/)[A-Z]{3}',self.fpl.other)
             if reFind:
                 airline = reFind.group()
-            else:
-#                 airline = askstring("Airline", "Enter airline ICAO:")
-#                 if airline is None:
-                    airline = ""
         
-        ## selcal from SEL/ or ask
-        reFind = re.search("(?<=SEL/)[A-S]{4}",self.fpl.other)
+        # Selcal (SEL) from other field.
+        reFind = re.search('(?<=SEL/)[A-S]{4}',self.fpl.other)
         if reFind:
             selcal = reFind.group()
+        
+        # Add the found values
+        if airline:
+            url = '{}&airline={}'.format(url,airline)
+        if fltnum:
+            url = '{}&fltnum={}'.format(url,fltnum)
+        if registration:
+            url = '{}&reg={}'.format(url,registration)
+        if selcal:
+            url = '{}&selcal={}'.format(url,selcal)
+        
+        # ----FPL----
+        # Alternates.
+        
+        # ----ADD----
+        # Extra Fuel.
+        # Cont fuel
+        # Reserve Fuel.
+        # Taxi out.
+        # Taxi in.
+        # Cargo.
+        # Pax.
+        # Dep rwy.
+        # Arr rwy.
+        # CI
+        # ETOPS.
+        
+        
+        # Specify options.
+        # For Simbrief process.
+        if len(args) and args[0]:
+            url = '{}&planformat=LIDO&units=KGS&navlog=0&etops=0&stepclimbs=0&tlr=0&notams=0&firnot=0&maps=none'.format(url)
+        
+        # For show Simbiref.
         else:
-#             selcal = askstring("Selcal", "Enter Selcal Code:")
-#             if selcal is None:
-                selcal = ""
-        
-        
-        url = "https://www.simbrief.com/system/dispatch.php?airline={}&fltnum={}&type={}&orig={}&dest={}&deph={}&depm={}&reg={}&selcal={}&route={}&fl={}00".format(airline,
-                                                                                                                                                                   fltnum,
-                                                                                                                                                                   self.fpl.actype,
-                                                                                                                                                                   self.fpl.depicao,
-                                                                                                                                                                   self.fpl.desticao,
-                                                                                                                                                                   deph,
-                                                                                                                                                                   depm,
-                                                                                                                                                                   reg,
-                                                                                                                                                                   selcal,
-                                                                                                                                                                   self.fpl.route,
-                                                                                                                                                                   self.fpl.level)
+            url = '{}&planformat=LIDO&units=KGS&navlog=1&etops=1&stepclimbs=0&tlr=0&notams=1&firnot=1&maps=detail'.format(url)
+        print(url)
+        pass
+        # Open simbrief.
         webbrowser.open(url,new=2)
     
+    
+    def simbriefOpen(self):
+        pass
+        
+    def simbriefProcess(self):
+        pass
+            
     ## Display flights for departure and destination airport on flightaware.
     def flightaware(self):
         self.updateFpl()
@@ -856,7 +910,7 @@ class FPLGUI:
                     curWaypoint = self.fpl.waypoints[curWaypointName]
                     minDistance = 3.2 # slightly greater than pi
                     for wp in curWaypoint:
-                        distance = avFormula.gcDistance(radians(curCoordinates[0]),radians(curCoordinates[1]),radians(wp[0]),radians(wp[1]))
+                        distance = avFormula.gcDistance(curCoordinates[0],curCoordinates[1],wp[0],wp[1])
                         if distance < minDistance:
                             minDistance = distance
                             nearWp = wp
@@ -1002,7 +1056,7 @@ class FPLGUI:
         # Calculate middle point.
         depCoordinates = self.fpl.airports[self.fpl.depicao]
         destCoordinates = self.fpl.airports[self.fpl.desticao]
-        intermediatePoint = avFormula.gcIntermediatePoint(depCoordinates[0], destCoordinates[0], depCoordinates[1], destCoordinates[1])
+        intermediatePoint = avFormula.gcIntermediatePoint(depCoordinates[0], depCoordinates[1], destCoordinates[0], destCoordinates[1])
         
         skyvectorUrl = 'http://skyvector.com/?ll={:9.6f},{:9.6f}&chart=304&zoom=6&fpl=%20{}%20{}%20{}'.format(intermediatePoint[0],
                                                                                                      intermediatePoint[1],
@@ -1010,9 +1064,54 @@ class FPLGUI:
                                                                                                      self.fpl.route.replace(' ','%20'),
                                                                                                      self.fpl.desticao)
         webbrowser.open(skyvectorUrl,new=2)
-#         print(skyvectorUrl)
-#         print('http://skyvector.com/?ll=36.010215,29.864597&chart=304&zoom=6&fpl=%20LGAV%20VARIX%20UL995%20RDS%20UM601%20LCA%20UR19%20DESPO%20R19%20KUKLA%20OLBA')
         
+        
+    def showFplText(self):
+        # Get Field contents.
+        self.updateFpl()
+        
+        # Init string.
+        fplString = '(FPL\n'
+        
+        # Complete string.
+        fplString = '{}-{}-{}{}\n'.format(fplString,
+                                          self.fpl.callsign,
+                                          self.fpl.rules,
+                                          self.fpl.flighttype)
+        fplString = '{}-{}{}/{}-{}/{}\n'.format(fplString,
+                                                self.fpl.number,
+                                                self.fpl.actype,
+                                                self.fpl.wakecat,
+                                                self.fpl.equipment,
+                                                self.fpl.transponder)
+        fplString = '{}-{}{}\n'.format(fplString,
+                                       self.fpl.depicao,
+                                       self.fpl.deptime)
+        fplString = '{}-N{:04}F{:03} {}\n'.format(fplString,
+                                                  int(self.fpl.speed),
+                                                  int(self.fpl.level),
+                                                  self.fpl.route)
+        fplString = '{}-{}{} {} {}\n'.format(fplString,
+                                             self.fpl.desticao,
+                                             self.fpl.eet,
+                                             self.fpl.alticao,
+                                             self.fpl.alt2icao)
+        fplString = '{}-{})'.format(fplString,self.fpl.other)
+        
+        # Print string.
+        print(fplString)
+        
+        # Copy to clipboard.
+        r = Tk()
+        r.withdraw()
+        r.clipboard_clear()
+        r.clipboard_append(str(fplString))
+        r.update()
+        r.destroy()
+        
+        # Show in window.
+        showinfo("Flightplan text", '{}\n\n(Copied to clipboard.)'.format(fplString))
+
         
     # Callbacks
     def routeListCB(self):

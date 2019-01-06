@@ -19,6 +19,7 @@
 #==============================================================================
 
 import re
+import os
 import configparser
 import avFormula
 from copy import deepcopy
@@ -28,7 +29,32 @@ class Fpl(object):
     
     def __init__(self,fplPath):
         self.path = fplPath
-        self.load(self.path + "\\Default.fpl")
+        if os.path.isfile(os.path.join(self.path,"Default.fpl")):
+            self.load(os.path.join(self.path,"Default.fpl"))
+        else:
+            self.callsign = ''
+            self.pic = ''
+            self.speedtype = 'N'
+            self.pob = ''
+            self.endurance = ''
+            self.other = ''
+            self.alt2icao = ''
+            self.alticao = ''
+            self.eet = ''
+            self.desticao = ''
+            self.route = ''
+            self.level = ''
+            self.leveltype = 'F'
+            self.speed = ''
+            self.deptime = ''
+            self.depicao = ''
+            self.transponder = ''
+            self.equipment = ''
+            self.wakecat = 'M'
+            self.actype = ''
+            self.number = '1'
+            self.flighttype = 'G'
+            self.rules = 'I'
         self.waypoints = {}
         self.airways = {}
         self.airports = {}
