@@ -18,6 +18,11 @@
 # this program.  If not, see <https://www.gnu.org/licenses/>.
 #==============================================================================
 
+#TODO: Insert tab for open validation tool (http://validation.eurofpl.eu)
+#TODO: Implement info for SID/STAR
+#TODO: Fix reading of navdata (airways)
+
+
 import time
 import datetime
 import os
@@ -29,9 +34,10 @@ from urllib.request import urlopen
 import webbrowser
 import configparser as ConfigParser
 from tkinter import Tk, Menu, Label, Entry, StringVar, OptionMenu, W, END, Toplevel, Button, Listbox, messagebox
-from tkinter.filedialog import askdirectory, askopenfilename, asksaveasfilename
+from tkinter.filedialog import askopenfilename, asksaveasfilename#, askdirectory
 # from tkinter.simpledialog import askstring
 from tkinter.messagebox import showwarning, showinfo
+from tkinter.scrolledtext import ScrolledText
 from Fpl import Fpl
 import avFormula
 from OptionsWindow import OptionsWindow
@@ -95,10 +101,13 @@ class FPLGUI:
         self.fpl = Fpl(self.fplPath)
         
         # Load Fixes
-#         self.fpl.getFixes(os.path.join(self.navdataDir,'earth_fix.dat'))
-#         self.fpl.getNavaids(os.path.join(self.navdataDir,'earth_nav.dat'))
-#         self.fpl.getAirports(os.path.join(self.navdataDir,'apt.csv'))
+        self.fpl.getFixes(os.path.join(self.navdataDir,'earth_fix.dat'))
+        self.fpl.getNavaids(os.path.join(self.navdataDir,'earth_nav.dat'))
+        self.fpl.getAirports(os.path.join(self.navdataDir,'apt.csv'))
 #         self.fpl.getAirways(os.path.join(self.navdataDir,'earth_awy.dat'))
+        
+        # Load SID/STAR info.
+        self.readSidStarInfo()
         
         # Remove Splash.
         splashWindow.destroy()
@@ -111,6 +120,7 @@ class FPLGUI:
         ## menu ##
         menubar = Menu(self.master)
         
+        # File
         filemenu = Menu(menubar,tearoff=0)
         filemenu.add_command(label="Clear",command=self.clear)
         filemenu.add_command(label="Send to XP",command=self.send)
@@ -121,17 +131,23 @@ class FPLGUI:
         filemenu.add_command(label="Exit",command=self.master.quit)
         menubar.add_cascade(label="File", menu=filemenu)
         
+        # Aircraft
         acmenu = Menu(menubar,tearoff=0)
         acmenu.add_command(label="Load Template",command=self.acLoad)
         acmenu.add_command(label="Save Template",command=self.acSave)
         menubar.add_cascade(label="Aircraft", menu=acmenu)
         
+        #Extas
         utilmenu = Menu(menubar,tearoff=0)
         utilmenu.add_command(label="Import Route",command=self.importRoute)
         utilmenu.add_separator()
-        utilmenu.add_command(label="Open Simbrief",command=self.simbrief)
-        utilmenu.add_command(label="Simbrief process",command= lambda: self.simbrief(True))
+        utilmenu.add_command(label="Open Simbrief",command=self.simbriefOpen)
+        utilmenu.add_command(label="Simbrief process",command=self.simbriefProcess)
         utilmenu.add_command(label="Flightaware",command=self.flightaware)
+        utilmenu.add_command(label="IFPS validation",command=self.ifpsValidation)
+#         utilmenu.add_command(label="Filing SID/STAR",command=lambda: webbrowser.open('https://avdocs.de/hanysheets/clearance-sheet/',new=2))
+        utilmenu.add_command(label="Filing SID/STAR",command=self.filingSidStar)
+        
         utilmenu.add_separator()
         utilmenu.add_command(label="Show at Skyvector",command=self.showSkyvector)
         utilmenu.add_command(label="Export to X-Plane",command=self.export2xp)
@@ -607,7 +623,8 @@ class FPLGUI:
     def optionsButtonCancelCB(self):
         self.top.destroy()
     
-    def simbrief(self,*args):
+    def simbriefOpen(self,*args):
+        #TODO: Add alternate if given
         self.updateFpl()
         
         url = 'https://www.simbrief.com/system/dispatch.php?'
@@ -716,13 +733,6 @@ class FPLGUI:
         # CI
         # ETOPS.
         
-        
-        # Specify options.
-        # For Simbrief process.
-        if len(args) and args[0]:
-            url = '{}&planformat=LIDO&units=KGS&navlog=0&etops=0&stepclimbs=0&tlr=0&notams=0&firnot=0&maps=none'.format(url)
-        
-        # For show Simbiref.
         else:
             url = '{}&planformat=LIDO&units=KGS&navlog=1&etops=1&stepclimbs=0&tlr=0&notams=1&firnot=1&maps=detail'.format(url)
 #         print(url)
@@ -730,12 +740,29 @@ class FPLGUI:
 
         # Open simbrief.
         webbrowser.open(url,new=2)
-    
-    
-    def simbriefOpen(self):
-        pass
         
     def simbriefProcess(self):
+        #TODO: complete simbrief process
+#         time.sleep(1)
+#         simEntryTl = Toplevel()
+# #             simEntryTl.geometry('240x850+200+100')
+#         simEntryTl.title('Simbrief input')
+#         Label(simEntryTl,text='Insert text of OPF from Simbrief').pack()
+#         scText = ScrolledText(simEntryTl,width=70)
+#         scText.pack()
+#         simbriefOpf = StringVar()
+#         simEntryTlButtonCb = lambda: [simbriefOpf.set(scText.get(0.0, END)),simEntryTl.destroy()]
+#         Button(simEntryTl,text='Done',command=simEntryTlButtonCb).pack()
+#         
+#         self.master.wait_window(simEntryTl)
+#         
+#         simbriefOpfStr = simbriefOpf.get()
+        
+        with open('opf.txt') as opfFile:
+            simbriefOpfStr = opfFile.read()
+            
+        
+        
         pass
             
     ## Display flights for departure and destination airport on flightaware.
@@ -1065,9 +1092,9 @@ class FPLGUI:
                                                                                                      self.fpl.route.replace(' ','%20'),
                                                                                                      self.fpl.desticao)
         webbrowser.open(skyvectorUrl,new=2)
-        
-        
-    def showFplText(self):
+    
+    
+    def generateFplText(self):
         # Get Field contents.
         self.updateFpl()
         
@@ -1099,6 +1126,12 @@ class FPLGUI:
                                              self.fpl.alt2icao)
         fplString = '{}-{})'.format(fplString,self.fpl.other)
         
+        return fplString
+        
+    def showFplText(self):
+        # Get fpl string.
+        fplString = self.generateFplText()
+        
         # Print string.
         print(fplString)
         
@@ -1112,8 +1145,77 @@ class FPLGUI:
         
         # Show in window.
         showinfo("Flightplan text", '{}\n\n(Copied to clipboard.)'.format(fplString))
-
         
+        
+    def ifpsValidation(self):
+        # Get fpl string.
+        fplString = self.generateFplText()
+        
+        # Print string.
+        print(fplString)
+        
+        # Copy to clipboard.
+        r = Tk()
+        r.withdraw()
+        r.clipboard_clear()
+        r.clipboard_append(str(fplString))
+        r.update()
+        r.destroy()
+        
+        # Open validation website.
+        webbrowser.open('http://validation.eurofpl.eu',new=2)
+    
+    def readSidStarInfo(self):
+        
+        with open(os.path.join(self.databaseDir,'SidStar.dat')) as infoFile:
+            data = infoFile.readlines()
+        
+        self.sidStarInfo = {}
+        
+        for line in data:
+            lineSplit = line.split(';')
+            if lineSplit[3] == '\n':
+                self.sidStarInfo[lineSplit[0]] = [lineSplit[1],bool(lineSplit[2]),'']
+            else:
+                self.sidStarInfo[lineSplit[0]] = [lineSplit[1],bool(lineSplit[2]),lineSplit[3]]
+    
+    def filingSidStar(self):
+        self.updateFpl()
+        
+        # Get and add departure info.
+        info = self.sidStarInfo.get(self.fpl.depicao[0:2],['','No Info given',''])
+        if info[1] == 'No Info given':
+            infoString = 'Departure: No Info given\n'
+        elif info[1]:
+            infoString = 'Departure: File SID!\n'
+        else:
+            infoString = 'Departure: Do not file SID!\n'
+        
+        if info[2]:
+            infoString += info[2]
+            infoString += '\n\n'
+        else:
+            infoString += '\n'
+            
+        # Get and add destination info.
+        info = self.sidStarInfo.get(self.fpl.desticao[0:2],['','No Info given',''])
+        if info[1] == 'No Info given':
+            infoString += 'Destination: No Info given\n'
+        elif info[1]:
+            infoString += 'Destination: File STAR!\n'
+        else:
+            infoString += 'Destination: Do not file STAR!\n'
+        
+        if info[2]:
+            infoString += info[2]
+            infoString += '\n\n'
+        else:
+            infoString += '\n'
+        
+        # Show Window.
+        showinfo("Info Filing SID/STAR", infoString)
+    
+    
     # Callbacks
     def routeListCB(self):
         selectedRoute = self.importRouteListboxTl.curselection()
@@ -1268,6 +1370,7 @@ class FPLGUI:
             enteredChar = string[-1]
             if not enteredChar.isalpha() and enteredChar != ' ' and enteredChar != "'" and enteredChar != '-':
                 self.pic.set(string[0:-1])
+                
 
 """ main """
 if __name__ == '__main__':

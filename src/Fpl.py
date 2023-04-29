@@ -91,13 +91,20 @@ class Fpl(object):
     
     
     def save(self,filepath):
+        # Get airline if in callsign.
+        if re.match('[A-Z]{3}\d\w*', self.callsign):
+            airline = self.callsign[0:3]
+        else:
+            airline = ''
+        
+        # Write flightplan.
         with open(filepath,'w') as fplFile:
             fplFile.write("[FLIGHTPLAN]\r\n")
             fplFile.write("CALLSIGN={}\r\n".format(self.callsign))
             fplFile.write("PIC={}\r\n".format(self.pic))
             fplFile.write("FMCROUTE={}\r\n".format(self.route))
             fplFile.write("LIVERY=\r\n")
-            fplFile.write("AIRLINE=\r\n")
+            fplFile.write("AIRLINE={}\r\n".format(airline))
             fplFile.write("SPEEDTYPE={}\r\n".format(self.speedtype))
             fplFile.write("POB={}\r\n".format(self.pob))
             fplFile.write("ENDURANCE={}\r\n".format(self.endurance))
